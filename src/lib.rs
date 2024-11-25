@@ -1,14 +1,5 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+use aoc_runner_derive::aoc_lib;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub mod day01;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+aoc_lib!{ year = 2023 }
