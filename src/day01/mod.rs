@@ -1,13 +1,11 @@
+use crate::utils::AocError::*;
 use anyhow::{Context, Result};
 use aoc_runner_derive::{aoc, aoc_generator};
-use crate::utils::AocError::*;
 
 fn parse_line(s: &str) -> Result<(i32, i32)> {
     let mut cs = s
         .split(" ")
-        .filter(|s| !s.is_empty())
-        .collect::<Vec<_>>()
-        .into_iter();
+        .filter(|s| !s.is_empty());
 
     match (cs.next(), cs.next()) {
         (Some(i), Some(j)) => Ok((i.parse::<i32>()?, j.parse::<i32>()?)),
@@ -32,7 +30,11 @@ pub fn solve_part1(input: &[(i32, i32)]) -> Result<i32> {
     first.sort();
     second.sort();
 
-    Ok(first.into_iter().zip(second).map(|(i, j)| (j-i).abs()).sum())
+    Ok(first
+        .into_iter()
+        .zip(second)
+        .map(|(i, j)| (j - i).abs())
+        .sum())
 }
 
 #[aoc(day01, part2)]
