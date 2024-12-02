@@ -16,12 +16,6 @@ fn parse_line(line: &str) -> Result<Vec<i32>> {
 
 #[aoc_generator(day02)]
 pub fn input_generator(input: &str) -> Result<Vec<Vec<i32>>> {
-//     let input = "7 6 4 2 1
-// 1 2 7 8 9
-// 9 7 6 2 1
-// 1 3 2 4 5
-// 8 6 4 4 1
-// 1 3 6 7 9";
     input.lines().map(parse_line).collect::<Result<Vec<_>>>()
 }
 
@@ -82,4 +76,29 @@ pub fn solve_part2(input: &[Vec<i32>]) -> Result<usize> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    fn input() -> &'static str {
+        "7 6 4 2 1
+1 2 7 8 9
+9 7 6 2 1
+1 3 2 4 5
+8 6 4 4 1
+1 3 6 7 9"
+    }
+
+    fn parse() -> Result<Vec<Vec<i32>>> {
+        input_generator(input())
+    }
+
+    #[test]
+    fn part1() -> Result<()> {
+        let data = parse()?;
+        Ok(assert_eq!(2, solve_part1(&data)?))
+    }
+
+    #[test]
+    fn part2() -> Result<()> {
+        let data = parse()?;
+        Ok(assert_eq!(4, solve_part2(&data)?))
+    }
 }
