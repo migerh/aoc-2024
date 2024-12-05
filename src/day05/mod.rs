@@ -9,34 +9,6 @@ type PageOrders = Vec<PagePair>;
 
 #[aoc_generator(day05)]
 pub fn input_generator(input: &str) -> Result<(PageOrders, Vec<PrintOrder>)> {
-//     let input = "47|53
-// 97|13
-// 97|61
-// 97|47
-// 75|29
-// 61|13
-// 75|53
-// 29|13
-// 97|29
-// 53|29
-// 61|53
-// 97|53
-// 61|29
-// 47|13
-// 75|47
-// 97|75
-// 47|61
-// 75|61
-// 47|29
-// 75|13
-// 53|13
-// 
-// 75,47,61,53,29
-// 97,61,53,29,13
-// 75,29,13
-// 75,97,47,61,53
-// 61,13,29
-// 97,13,75,29,47";
     let mut basic_split = input.split("\n\n");
     let page_orders = basic_split
         .next()
@@ -59,7 +31,7 @@ pub fn input_generator(input: &str) -> Result<(PageOrders, Vec<PrintOrder>)> {
             let rhs = s
                 .next()
                 .ok_or(GenericError)
-                .context("No lhs")?
+                .context("No rhs")?
                 .parse::<u32>()?;
 
             Ok((lhs, rhs))
@@ -86,34 +58,7 @@ fn check(orders: &PageOrders, pages: PagePair) -> bool {
         == 0
 }
 
-#[aoc(day05, part1)]
-pub fn solve_part1(input: &(PageOrders, Vec<PrintOrder>)) -> Result<u32> {
-    let (pages, prints) = input;
-
-    let sum = prints
-        .iter()
-        .filter(|p| {
-            for i in 0..(p.len() - 1) {
-                let lhs = p[i];
-                for j in (i + 1)..p.len() {
-                    let rhs = p[j];
-
-                    let c = check(pages, (lhs, rhs));
-                    if !c {
-                        return false;
-                    }
-                }
-            }
-
-            true
-        })
-        .map(|v| v[v.len() / 2])
-        .sum::<u32>();
-
-    Ok(sum)
-}
-
-fn is_correct(pages: &PageOrders, p: &PrintOrder) -> bool {
+fn find_first_page_with_wrong_order(pages: &PageOrders, p: &PrintOrder) -> Option<(usize, usize)> {
     for i in 0..(p.len() - 1) {
         let lhs = p[i];
         for j in (i + 1)..p.len() {
@@ -121,12 +66,29 @@ fn is_correct(pages: &PageOrders, p: &PrintOrder) -> bool {
 
             let c = check(pages, (lhs, rhs));
             if !c {
-                return false;
+                return Some((i, j));
             }
         }
     }
 
-    true
+    None
+}
+
+fn is_correct(pages: &PageOrders, p: &PrintOrder) -> bool {
+    find_first_page_with_wrong_order(pages, p).is_none()
+}
+
+#[aoc(day05, part1)]
+pub fn solve_part1(input: &(PageOrders, Vec<PrintOrder>)) -> Result<u32> {
+    let (pages, prints) = input;
+
+    let sum = prints
+        .iter()
+        .filter(|p| is_correct(pages, p))
+        .map(|v| v[v.len() / 2])
+        .sum::<u32>();
+
+    Ok(sum)
 }
 
 #[aoc(day05, part2)]
@@ -135,46 +97,22 @@ pub fn solve_part2(input: &(PageOrders, Vec<PrintOrder>)) -> Result<u32> {
 
     let to_fix = prints
         .iter()
-        .filter(|p| {
-            for i in 0..(p.len() - 1) {
-                let lhs = p[i];
-                for j in (i + 1)..p.len() {
-                    let rhs = p[j];
-
-                    let c = check(pages, (lhs, rhs));
-                    if !c {
-                        return true;
-                    }
-                }
-            }
-
-            false
-        })
+        .filter(|p| !is_correct(pages, p))
         .collect::<Vec<_>>();
 
-    let mut sum = 0;
-    for prints in to_fix {
+    let sum = to_fix.into_iter().map(|prints| {
         let mut p = prints.clone();
-        let mut is_correct = false;
-        'outer: while !is_correct {
-            for i in 0..(p.len() - 1) {
-                let lhs = p[i];
-                for j in (i + 1)..p.len() {
-                    let rhs = p[j];
-
-                    let c = check(pages, (lhs, rhs));
-                    if !c {
-                        p.swap(i, j);
-                        continue 'outer;
-                    }
-                }
+        loop {
+            let swap = find_first_page_with_wrong_order(pages, &p);
+            if let Some((i, j)) = swap {
+                p.swap(i, j);
+            } else {
+                break;
             }
-
-            is_correct = true;
         }
 
-        sum += p[p.len() / 2];
-    }
+        p[p.len() / 2]
+    }).sum();
 
     Ok(sum)
 }
@@ -182,4 +120,51 @@ pub fn solve_part2(input: &(PageOrders, Vec<PrintOrder>)) -> Result<u32> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    fn input() -> &'static str {
+        "47|53
+97|13
+97|61
+97|47
+75|29
+61|13
+75|53
+29|13
+97|29
+53|29
+61|53
+97|53
+61|29
+47|13
+75|47
+97|75
+47|61
+75|61
+47|29
+75|13
+53|13
+
+75,47,61,53,29
+97,61,53,29,13
+75,29,13
+75,97,47,61,53
+61,13,29
+97,13,75,29,47"
+    }
+
+    fn parse() -> Result<(PageOrders, Vec<PrintOrder>)> {
+        input_generator(input())
+    }
+
+    #[test]
+    fn par1() -> Result<()> {
+        let data = parse()?;
+        Ok(assert_eq!(143, solve_part1(&data)?))
+    }
+
+    #[test]
+    fn par2() -> Result<()> {
+        let data = parse()?;
+        Ok(assert_eq!(123, solve_part2(&data)?))
+    }
 }
