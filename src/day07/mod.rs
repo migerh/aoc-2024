@@ -171,4 +171,16 @@ mod test {
     fn cc2() {
         assert_eq!(615, cc(6, 15));
     }
+
+    #[test]
+    fn part1() -> Result<()> {
+        let data = input_generator(input())?;
+        Ok(assert_eq!(3749, solve_part1(&data)?))
+    }
+
+    #[test]
+    fn part2() -> Result<()> {
+        let data = input_generator(input())?;
+        Ok(assert_eq!(11387, solve_part2(&data)?))
+    }
 }
