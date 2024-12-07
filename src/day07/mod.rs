@@ -58,17 +58,20 @@ fn mul(n: u128, r: &[u128]) -> Vec<u128> {
         .collect::<Vec<_>>()
 }
 
-#[aoc(day07, part1)]
-pub fn solve_part1(input: &[Equation]) -> Result<u128> {
-    Ok(input
+fn filter(equations: &[Equation]) -> Vec<&Equation> {
+    equations
         .par_iter()
         .filter(|e| {
             let collect = plus(0, &e.1);
 
             collect.contains(&e.0)
         })
-        .map(|e| e.0)
-        .sum())
+        .collect()
+}
+
+#[aoc(day07, part1)]
+pub fn solve_part1(input: &[Equation]) -> Result<u128> {
+    Ok(filter(input).into_iter().map(|e| e.0).sum())
 }
 
 fn plus2(n: u128, r: &[u128]) -> Vec<u128> {
@@ -119,16 +122,28 @@ fn concat(n: u128, r: &[u128]) -> Vec<u128> {
         .collect::<Vec<_>>()
 }
 
+fn filter2(equations: &[Equation]) -> Vec<&Equation> {
+    equations
+        .par_iter()
+        .filter(|e| {
+            let collect = plus(0, &e.1);
+
+            !collect.contains(&e.0)
+        })
+        .collect()
+}
+
 #[aoc(day07, part2)]
 pub fn solve_part2(input: &[Equation]) -> Result<u128> {
-    Ok(input
+    let sum1 = filter(input).into_iter().map(|e| e.0).sum::<u128>();
+    Ok(filter2(input)
         .par_iter()
         .filter(|e| {
             let collect = plus2(0, &e.1);
             collect.contains(&e.0)
         })
         .map(|e| e.0)
-        .sum())
+        .sum::<u128>() + sum1)
 }
 
 #[cfg(test)]
