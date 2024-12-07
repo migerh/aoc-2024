@@ -104,9 +104,9 @@ fn mul2(n: Num, r: &[Num]) -> Vec<Num> {
 }
 
 fn cc(a: Num, b: Num) -> Num {
-    (a.to_string() + b.to_string().as_str())
-        .parse::<Num>()
-        .unwrap()
+    let digits = b.ilog10() + 1;
+    let factor = 10u64.pow(digits);
+    a * factor + b
 }
 
 fn concat(n: Num, r: &[Num]) -> Vec<Num> {
@@ -171,6 +171,16 @@ mod test {
     #[test]
     fn cc2() {
         assert_eq!(615, cc(6, 15));
+    }
+
+    #[test]
+    fn cc_many() {
+        for i in 0..1000 {
+            for j in 0..1000 {
+                let correct = i * 10u64.pow(j.to_string().len() as u32) + j;
+                assert_eq!(correct, cc(i, j));
+            }
+        }
     }
 
     #[test]
