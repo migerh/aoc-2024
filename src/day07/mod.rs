@@ -4,16 +4,17 @@ use rayon::prelude::*;
 
 use crate::utils::AocError::*;
 
-type Equation = (u128, Vec<u128>);
+type Num = u64;
+type Equation = (Num, Vec<Num>);
 
-fn parse_line(s: &str) -> Result<(u128, Vec<u128>)> {
+fn parse_line(s: &str) -> Result<(Num, Vec<Num>)> {
     let mut split = s.split(":");
 
     let lhs = split
         .next()
         .ok_or(GenericError)
         .context("Could not find lhs")?
-        .parse::<u128>()?;
+        .parse::<Num>()?;
     let rhs = split
         .next()
         .ok_or(GenericError)
@@ -21,7 +22,7 @@ fn parse_line(s: &str) -> Result<(u128, Vec<u128>)> {
     let values = rhs
         .split(" ")
         .filter(|v| !v.is_empty())
-        .map(|v| -> Result<u128> { Ok(v.parse::<u128>()?) })
+        .map(|v| -> Result<Num> { Ok(v.parse::<Num>()?) })
         .collect::<Result<Vec<_>>>()?;
 
     Ok((lhs, values))
@@ -32,7 +33,7 @@ pub fn input_generator(input: &str) -> Result<Vec<Equation>> {
     input.lines().map(parse_line).collect::<Result<Vec<_>>>()
 }
 
-fn plus(n: u128, r: &[u128]) -> Vec<u128> {
+fn plus(n: Num, r: &[Num]) -> Vec<Num> {
     let l = r.len();
     if l == 1 {
         return vec![n + r[0]];
@@ -45,7 +46,7 @@ fn plus(n: u128, r: &[u128]) -> Vec<u128> {
         .collect::<Vec<_>>()
 }
 
-fn mul(n: u128, r: &[u128]) -> Vec<u128> {
+fn mul(n: Num, r: &[Num]) -> Vec<Num> {
     let l = r.len();
     if l == 1 {
         return vec![n * r[0]];
@@ -70,11 +71,11 @@ fn filter(equations: &[Equation]) -> Vec<&Equation> {
 }
 
 #[aoc(day07, part1)]
-pub fn solve_part1(input: &[Equation]) -> Result<u128> {
+pub fn solve_part1(input: &[Equation]) -> Result<Num> {
     Ok(filter(input).into_iter().map(|e| e.0).sum())
 }
 
-fn plus2(n: u128, r: &[u128]) -> Vec<u128> {
+fn plus2(n: Num, r: &[Num]) -> Vec<Num> {
     let l = r.len();
     if l == 1 {
         return vec![n + r[0]];
@@ -88,7 +89,7 @@ fn plus2(n: u128, r: &[u128]) -> Vec<u128> {
         .collect::<Vec<_>>()
 }
 
-fn mul2(n: u128, r: &[u128]) -> Vec<u128> {
+fn mul2(n: Num, r: &[Num]) -> Vec<Num> {
     let l = r.len();
     if l == 1 {
         return vec![n * r[0]];
@@ -102,13 +103,13 @@ fn mul2(n: u128, r: &[u128]) -> Vec<u128> {
         .collect::<Vec<_>>()
 }
 
-fn cc(a: u128, b: u128) -> u128 {
+fn cc(a: Num, b: Num) -> Num {
     (a.to_string() + b.to_string().as_str())
-        .parse::<u128>()
+        .parse::<Num>()
         .unwrap()
 }
 
-fn concat(n: u128, r: &[u128]) -> Vec<u128> {
+fn concat(n: Num, r: &[Num]) -> Vec<Num> {
     let l = r.len();
     if l == 1 {
         return vec![cc(r[0], n)];
@@ -134,8 +135,8 @@ fn filter2(equations: &[Equation]) -> Vec<&Equation> {
 }
 
 #[aoc(day07, part2)]
-pub fn solve_part2(input: &[Equation]) -> Result<u128> {
-    let sum1 = filter(input).into_iter().map(|e| e.0).sum::<u128>();
+pub fn solve_part2(input: &[Equation]) -> Result<Num> {
+    let sum1 = filter(input).into_iter().map(|e| e.0).sum::<Num>();
     Ok(filter2(input)
         .par_iter()
         .filter(|e| {
@@ -143,7 +144,7 @@ pub fn solve_part2(input: &[Equation]) -> Result<u128> {
             collect.contains(&e.0)
         })
         .map(|e| e.0)
-        .sum::<u128>() + sum1)
+        .sum::<Num>() + sum1)
 }
 
 #[cfg(test)]
