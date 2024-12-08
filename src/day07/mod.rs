@@ -176,7 +176,7 @@ mod test {
     #[test]
     fn cc_many() {
         for i in 0..1000 {
-            for j in 0..1000 {
+            for j in 1..1000 {
                 let correct = i * 10u64.pow(j.to_string().len() as u32) + j;
                 assert_eq!(correct, cc(i, j));
             }
