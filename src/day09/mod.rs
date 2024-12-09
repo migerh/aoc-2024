@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use anyhow::{Context, Result};
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
@@ -24,8 +26,6 @@ use FileSystemEntry::*;
 
 #[aoc_generator(day09)]
 pub fn input_generator(input: &str) -> Result<Vec<FileSystemEntry>> {
-    // let input = "2333133121414131402";
-
     input
         .chars()
         .filter(|c| *c != '\n')
@@ -101,19 +101,21 @@ pub fn solve_part1(input: &[FileSystemEntry]) -> Result<usize> {
         last_file.0 = hdd.len() - last_file.0 - 1;
 
         match (first_empty.1, last_file.1) {
-            (Empty(free_space), File(file_size, id)) => {
-                if free_space < file_size {
+            (Empty(free_space), File(file_size, id)) => match free_space.cmp(&file_size) {
+                Ordering::Less => {
                     hdd[last_file.0] = File(file_size - free_space, id);
                     hdd[first_empty.0] = File(free_space, id);
-                } else if free_space == file_size {
+                }
+                Ordering::Equal => {
                     hdd[last_file.0] = Empty(free_space);
                     hdd[first_empty.0] = File(free_space, id);
-                } else if free_space > file_size {
+                }
+                Ordering::Greater => {
                     hdd.remove(last_file.0);
                     hdd[first_empty.0] = Empty(free_space - file_size);
                     hdd.insert(first_empty.0, File(file_size, id));
                 }
-            }
+            },
             _ => unimplemented!(),
         }
     }
@@ -132,20 +134,22 @@ pub fn solve_part2(input: &[FileSystemEntry]) -> Result<usize> {
         .context("Empty disk")?;
 
     for id in (0..=max_file_id).rev() {
-        let file = hdd.clone().into_iter().find_position(|f| if let File(_, i) = f {
-            *i == id
-        } else { false }).ok_or(GenericError).context("Could not find specific file")?;
+        let file = hdd
+            .clone()
+            .into_iter()
+            .find_position(|f| if let File(_, i) = f { *i == id } else { false })
+            .ok_or(GenericError)
+            .context("Could not find specific file")?;
 
         match file.1 {
             File(file_size, id) => {
-                let first_empty = hdd
-                    .clone()
-                    .into_iter()
-                    .find_position(|v| if let Empty(u) = v {
+                let first_empty = hdd.clone().into_iter().find_position(|v| {
+                    if let Empty(u) = v {
                         *u >= file_size
                     } else {
                         false
-                    });
+                    }
+                });
 
                 match first_empty {
                     None => continue,
@@ -161,10 +165,10 @@ pub fn solve_part2(input: &[FileSystemEntry]) -> Result<usize> {
                             hdd[idx] = File(file_size, id);
                             hdd[file.0] = Empty(file_size);
                         }
-                    },
+                    }
                     _ => unimplemented!(),
                 }
-            },
+            }
             _ => unimplemented!(),
         }
     }
@@ -175,4 +179,20 @@ pub fn solve_part2(input: &[FileSystemEntry]) -> Result<usize> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    fn input() -> &'static str {
+        "2333133121414131402"
+    }
+
+    #[test]
+    fn part1() -> Result<()> {
+        let data = input_generator(input())?;
+        Ok(assert_eq!(1928, solve_part1(&data)?))
+    }
+
+    #[test]
+    fn part2() -> Result<()> {
+        let data = input_generator(input())?;
+        Ok(assert_eq!(2858, solve_part2(&data)?))
+    }
 }
