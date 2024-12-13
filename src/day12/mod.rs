@@ -246,5 +246,5 @@ pub fn solve_part2(input: &PlotMap) -> Result<usize> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    // use super::*;
 }
