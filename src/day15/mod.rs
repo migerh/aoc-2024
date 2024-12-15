@@ -2,7 +2,6 @@ use std::collections::{HashMap, HashSet};
 
 use anyhow::{Context, Result};
 use aoc_runner_derive::{aoc, aoc_generator};
-use itertools::{Itertools, MinMaxResult};
 
 use crate::utils::AocError::*;
 
@@ -50,28 +49,6 @@ impl Direction {
 
 #[aoc_generator(day15)]
 pub fn input_generator(input: &str) -> Result<(Map, Vec<Direction>)> {
-//    let input = "##########
-//#..O..O.O#
-//#......O.#
-//#.OO..O.O#
-//#..O@..O.#
-//#O#..O...#
-//#O..O..O.#
-//#.OO.O.OO#
-//#....O...#
-//##########
-//
-//<vv>^<v^>v>^vv^v>v<>v^v<v<^vv<<<^><<><>>v<vvv<>^v^>^<<<><<v<<<v^vv^v>^
-//vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
-//><>vv>v^v^<>><>>>><^^>vv>v<^^^>>v^v^<^^>v^^>v^<^v>v<>>v^v^<v>v^^<^^vv<
-//<<v<^>>^^^^>>>v^<>vvv^><v<<<>^^^vv^<vvv>^>v<^^^^v<>^>vvvv><>>v^<<^^^^^
-//^><^><>>><>^^<<^^v>>><^<v>^<vv>>v>>>^v><>^v><<<<v>>v<v<v>vvv>^<><<>^><
-//^>><>^v<><^vvv<^^<><v<<<<<><^v<<<><<<^^<v<^^^><^>>^<v^><<<^>>^v<v^v<v^
-//>^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
-//<><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
-//^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
-//v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
-
     let mut input = input.split("\n\n");
 
     let map = input
@@ -138,43 +115,6 @@ fn size(map: &Map) -> Option<(i32, i32)> {
     let height = map.iter().map(|(c, _)| c.0).max()?;
 
     Some((height, width))
-}
-
-fn format_map(map: &Map) -> Option<String> {
-    let (height, width) = size(map)?;
-
-    let mut out = vec![];
-    for y in 0..=height {
-        let mut line = vec![];
-        for x in 0..=width {
-            line.push(map.get(&(y, x))?);
-        }
-        line.push(&'\n');
-        out.append(&mut line);
-    }
-
-    Some(out.into_iter().collect::<String>())
-}
-
-fn print_map(map: &Map) -> Option<()> {
-    let m = format_map(map)?;
-    print!("{}", m);
-
-    Some(())
-}
-
-fn print_map_with_pos(map: &Map, pos: &Coords, dir: &Direction) -> Option<()> {
-    let mut map = map.clone();
-    let start = find_start_pos(&map)?;
-    map.entry(start).and_modify(|v| {
-        if *v == '@' {
-            *v = '.'
-        }
-    });
-    //map.entry(*pos).and_modify(|v| *v = dir.to_char());
-    map.entry(*pos).and_modify(|v| *v = '@');
-
-    print_map(&map)
 }
 
 fn hash_map(map: &Map) -> i32 {
@@ -333,7 +273,6 @@ fn tick_vertical(map: Map, pos: Coords, dir: &Direction) -> Option<(Map, Coords)
                 break;
             }
 
-            // println!("Collected: {:?}", this_layer);
             boxes_to_move.push(this_layer.clone());
             seeds = this_layer;
         }
@@ -374,21 +313,13 @@ pub fn solve_part2(input: &(Map, Vec<Direction>)) -> Result<i32> {
         .ok_or(GenericError)
         .context("Could not find start pos")?;
 
-    let (map, pos) = directions
+    let (map, _pos) = directions
         .iter()
         .try_fold((map.clone(), pos), |acc, dir| {
-            let (map, pos) = tick2(acc.0.clone(), acc.1, dir)?;
-
-            // if *dir == Direction::Up || *dir == Direction::Down {
-            //     print_map_with_pos(&map, &pos, dir);
-            // }
-
-            Some((map, pos))
+            tick2(acc.0.clone(), acc.1, dir)
         })
         .ok_or(GenericError)
         .context("Folding failed")?;
-
-    print_map_with_pos(&map, &pos, &Direction::Up);
 
     Ok(hash_map(&map))
 }
@@ -396,6 +327,42 @@ pub fn solve_part2(input: &(Map, Vec<Direction>)) -> Result<i32> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    fn format_map(map: &Map) -> Option<String> {
+        let (height, width) = size(map)?;
+
+        let mut out = vec![];
+        for y in 0..=height {
+            let mut line = vec![];
+            for x in 0..=width {
+                line.push(map.get(&(y, x))?);
+            }
+            line.push(&'\n');
+            out.append(&mut line);
+        }
+
+        Some(out.into_iter().collect::<String>())
+    }
+
+    fn print_map(map: &Map) -> Option<()> {
+        let m = format_map(map)?;
+        print!("{}", m);
+
+        Some(())
+    }
+
+    fn _print_map_with_pos(map: &Map, pos: &Coords, dir: &Direction) -> Option<()> {
+        let mut map = map.clone();
+        let start = find_start_pos(&map)?;
+        map.entry(start).and_modify(|v| {
+            if *v == '@' {
+                *v = '.'
+            }
+        });
+        map.entry(*pos).and_modify(|v| *v = dir.to_char());
+
+        print_map(&map)
+    }
 
     fn run(map: Map, dirs: Vec<Direction>) -> Result<Map> {
         let pos = find_start_pos(&map).ok_or(GenericError)?;
