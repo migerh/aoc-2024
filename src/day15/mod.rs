@@ -50,27 +50,27 @@ impl Direction {
 
 #[aoc_generator(day15)]
 pub fn input_generator(input: &str) -> Result<(Map, Vec<Direction>)> {
-    let input = "##########
-#..O..O.O#
-#......O.#
-#.OO..O.O#
-#..O@..O.#
-#O#..O...#
-#O..O..O.#
-#.OO.O.OO#
-#....O...#
-##########
-
-<vv>^<v^>v>^vv^v>v<>v^v<v<^vv<<<^><<><>>v<vvv<>^v^>^<<<><<v<<<v^vv^v>^
-vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
-><>vv>v^v^<>><>>>><^^>vv>v<^^^>>v^v^<^^>v^^>v^<^v>v<>>v^v^<v>v^^<^^vv<
-<<v<^>>^^^^>>>v^<>vvv^><v<<<>^^^vv^<vvv>^>v<^^^^v<>^>vvvv><>>v^<<^^^^^
-^><^><>>><>^^<<^^v>>><^<v>^<vv>>v>>>^v><>^v><<<<v>>v<v<v>vvv>^<><<>^><
-^>><>^v<><^vvv<^^<><v<<<<<><^v<<<><<<^^<v<^^^><^>>^<v^><<<^>>^v<v^v<v^
->^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
-<><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
-^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
-v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
+//    let input = "##########
+//#..O..O.O#
+//#......O.#
+//#.OO..O.O#
+//#..O@..O.#
+//#O#..O...#
+//#O..O..O.#
+//#.OO.O.OO#
+//#....O...#
+//##########
+//
+//<vv>^<v^>v>^vv^v>v<>v^v<v<^vv<<<^><<><>>v<vvv<>^v^>^<<<><<v<<<v^vv^v>^
+//vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
+//><>vv>v^v^<>><>>>><^^>vv>v<^^^>>v^v^<^^>v^^>v^<^v>v<>>v^v^<v>v^^<^^vv<
+//<<v<^>>^^^^>>>v^<>vvv^><v<<<>^^^vv^<vvv>^>v<^^^^v<>^>vvvv><>>v^<<^^^^^
+//^><^><>>><>^^<<^^v>>><^<v>^<vv>>v>>>^v><>^v><<<<v>>v<v<v>vvv>^<><<>^><
+//^>><>^v<><^vvv<^^<><v<<<<<><^v<<<><<<^^<v<^^^><^>>^<v^><<<^>>^v<v^v<v^
+//>^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
+//<><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
+//^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
+//v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
 
     let mut input = input.split("\n\n");
 
@@ -171,7 +171,8 @@ fn print_map_with_pos(map: &Map, pos: &Coords, dir: &Direction) -> Option<()> {
             *v = '.'
         }
     });
-    map.entry(*pos).and_modify(|v| *v = dir.to_char());
+    //map.entry(*pos).and_modify(|v| *v = dir.to_char());
+    map.entry(*pos).and_modify(|v| *v = '@');
 
     print_map(&map)
 }
@@ -332,25 +333,26 @@ fn tick_vertical(map: Map, pos: Coords, dir: &Direction) -> Option<(Map, Coords)
                 break;
             }
 
+            // println!("Collected: {:?}", this_layer);
             boxes_to_move.push(this_layer.clone());
             seeds = this_layer;
         }
 
         let mut y = pos.0 + (boxes_to_move.len() as i32 + 1) * v.0;
         for set in boxes_to_move.into_iter().rev() {
-            let minmax = set.into_iter().map(|p| p.1).minmax();
+            let mut sorted = set.into_iter().collect::<Vec<_>>();
+            sorted.sort_by(|a, b| a.1.cmp(&b.1));
+
             let mut dirs = ['[', ']'].into_iter().cycle();
 
-            if let MinMaxResult::MinMax(start, end) = minmax {
-                for x in start..=end {
-                    let b = dirs.next()?;
-                    new_map.entry((y, x)).and_modify(|v| *v = b);
-                }
+            for p in sorted.iter() {
+                let b = dirs.next()?;
+                new_map.entry((y, p.1)).and_modify(|v| *v = b);
+            }
 
-                y -= v.0;
-                for x in start..=end {
-                    new_map.entry((y, x)).and_modify(|v| *v = '.');
-                }
+            y -= v.0;
+            for p in sorted {
+                new_map.entry((y, p.1)).and_modify(|v| *v = '.');
             }
         }
 
@@ -375,7 +377,13 @@ pub fn solve_part2(input: &(Map, Vec<Direction>)) -> Result<i32> {
     let (map, pos) = directions
         .iter()
         .try_fold((map.clone(), pos), |acc, dir| {
-            tick2(acc.0.clone(), acc.1, dir)
+            let (map, pos) = tick2(acc.0.clone(), acc.1, dir)?;
+
+            // if *dir == Direction::Up || *dir == Direction::Down {
+            //     print_map_with_pos(&map, &pos, dir);
+            // }
+
+            Some((map, pos))
         })
         .ok_or(GenericError)
         .context("Folding failed")?;
@@ -400,6 +408,35 @@ mod test {
             .context("Could not print map")?;
 
         Ok(new_map)
+    }
+
+    #[test]
+    fn tick_up_bug1() -> Result<()> {
+        let input = "####################
+##................##
+##.....[].[]..[]..##
+##......[][]......##
+##.......[].......##
+##........@.......##
+####################
+
+^";
+        let expected = "####################
+##.....[].[]......##
+##......[][]..[]..##
+##.......[].......##
+##................##
+##........@.......##
+####################\n";
+        let (map, dirs) = input_generator(input)?;
+        let map = run(map, dirs)?;
+        let out = format_map(&map)
+            .ok_or(GenericError)
+            .context("Could not format map")?;
+
+        assert_eq!(expected, out);
+
+        Ok(())
     }
 
     #[test]
