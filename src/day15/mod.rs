@@ -50,48 +50,27 @@ impl Direction {
 
 #[aoc_generator(day15)]
 pub fn input_generator(input: &str) -> Result<(Map, Vec<Direction>)> {
-    //    let input = "##########
-    //#..O..O.O#
-    //#......O.#
-    //#.OO..O.O#
-    //#..O@..O.#
-    //#O#..O...#
-    //#O..O..O.#
-    //#.OO.O.OO#
-    //#....O...#
-    //##########
-    //
-    //<vv>^<v^>v>^vv^v>v<>v^v<v<^vv<<<^><<><>>v<vvv<>^v^>^<<<><<v<<<v^vv^v>^
-    //vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
-    //><>vv>v^v^<>><>>>><^^>vv>v<^^^>>v^v^<^^>v^^>v^<^v>v<>>v^v^<v>v^^<^^vv<
-    //<<v<^>>^^^^>>>v^<>vvv^><v<<<>^^^vv^<vvv>^>v<^^^^v<>^>vvvv><>>v^<<^^^^^
-    //^><^><>>><>^^<<^^v>>><^<v>^<vv>>v>>>^v><>^v><<<<v>>v<v<v>vvv>^<><<>^><
-    //^>><>^v<><^vvv<^^<><v<<<<<><^v<<<><<<^^<v<^^^><^>>^<v^><<<^>>^v<v^v<v^
-    //>^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
-    //<><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
-    //^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
-    //v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
+    let input = "##########
+#..O..O.O#
+#......O.#
+#.OO..O.O#
+#..O@..O.#
+#O#..O...#
+#O..O..O.#
+#.OO.O.OO#
+#....O...#
+##########
 
-    //    let input = "########
-    //#..O.O.#
-    //##@.O..#
-    //#...O..#
-    //#.#.O..#
-    //#...O..#
-    //#......#
-    //########
-    //
-    //<^^>>>vv<v>>v<<";
-
-    //    let input = "#######
-    //#...#.#
-    //#.....#
-    //#..OO@#
-    //#..O..#
-    //#.....#
-    //#######
-    //
-    //<vv<<^^<<^^";
+<vv>^<v^>v>^vv^v>v<>v^v<v<^vv<<<^><<><>>v<vvv<>^v^>^<<<><<v<<<v^vv^v>^
+vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
+><>vv>v^v^<>><>>>><^^>vv>v<^^^>>v^v^<^^>v^^>v^<^v>v<>>v^v^<v>v^^<^^vv<
+<<v<^>>^^^^>>>v^<>vvv^><v<<<>^^^vv^<vvv>^>v<^^^^v<>^>vvvv><>>v^<<^^^^^
+^><^><>>><>^^<<^^v>>><^<v>^<vv>>v>>>^v><>^v><<<<v>>v<v<v>vvv>^<><<>^><
+^>><>^v<><^vvv<^^<><v<<<<<><^v<<<><<<^^<v<^^^><^>>^<v^><<<^>>^v<v^v<v^
+>^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
+<><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
+^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
+v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
 
     let mut input = input.split("\n\n");
 
@@ -161,15 +140,25 @@ fn size(map: &Map) -> Option<(i32, i32)> {
     Some((height, width))
 }
 
-fn print_map(map: &Map) -> Option<()> {
+fn format_map(map: &Map) -> Option<String> {
     let (height, width) = size(map)?;
 
+    let mut out = vec![];
     for y in 0..=height {
+        let mut line = vec![];
         for x in 0..=width {
-            print!("{}", map.get(&(y, x))?);
+            line.push(map.get(&(y, x))?);
         }
-        println!();
+        line.push(&'\n');
+        out.append(&mut line);
     }
+
+    Some(out.into_iter().collect::<String>())
+}
+
+fn print_map(map: &Map) -> Option<()> {
+    let m = format_map(map)?;
+    print!("{}", m);
 
     Some(())
 }
@@ -182,8 +171,7 @@ fn print_map_with_pos(map: &Map, pos: &Coords, dir: &Direction) -> Option<()> {
             *v = '.'
         }
     });
-    // map.entry(*pos).and_modify(|v| *v = dir.to_char());
-    map.entry(*pos).and_modify(|v| *v = '@');
+    map.entry(*pos).and_modify(|v| *v = dir.to_char());
 
     print_map(&map)
 }
@@ -193,7 +181,6 @@ fn hash_map(map: &Map) -> i32 {
         .map(|((y, x), t)| match t {
             'O' => 100 * y + x,
             '[' => 100 * y + x,
-            ']' => 100 * y + x,
             _ => 0,
         })
         .sum::<i32>()
@@ -325,19 +312,20 @@ fn tick_vertical(map: Map, pos: Coords, dir: &Direction) -> Option<(Map, Coords)
                     return Some((map, pos));
                 }
 
-                all_empty &= c == Some(&'.') || c == Some(&'@');
+                let is_empty = c == Some(&'.') || c == Some(&'@');
+                all_empty &= is_empty;
 
-                if map.get(&new) != Some(&'.') {
-                    this_layer.insert(new);
+                if is_empty {
+                    continue;
                 }
+
+                this_layer.insert(new);
                 let new2 = if map.get(&new) == Some(&'[') {
                     (new.0, new.1 + 1)
                 } else {
                     (new.0, new.1 - 1)
                 };
-                if map.get(&new2) != Some(&'.') {
-                    this_layer.insert(new2);
-                }
+                this_layer.insert(new2);
             }
 
             if all_empty {
@@ -372,26 +360,6 @@ fn tick_vertical(map: Map, pos: Coords, dir: &Direction) -> Option<(Map, Coords)
     Some((map, new_pos))
 }
 
-fn map_makes_sense(map: &Map) -> Option<bool> {
-    let (height, width) = size(map)?;
-
-    for y in 0..height {
-        for x in 0..width {
-            let left = map.get(&(y, x))?;
-            let right = map.get(&(y, x + 1))?;
-            if &'[' == left && &']' != right {
-                return Some(false);
-            }
-
-            if &'[' != left && &']' == right {
-                return Some(false);
-            }
-        }
-    }
-
-    Some(true)
-}
-
 #[aoc(day15, part2)]
 pub fn solve_part2(input: &(Map, Vec<Direction>)) -> Result<i32> {
     let (map, directions) = input;
@@ -407,43 +375,12 @@ pub fn solve_part2(input: &(Map, Vec<Direction>)) -> Result<i32> {
     let (map, pos) = directions
         .iter()
         .try_fold((map.clone(), pos), |acc, dir| {
-            let (map, pos) = tick2(acc.0.clone(), acc.1, dir)?;
-
-            let makes_sense = map_makes_sense(&map)?;
-            if !makes_sense {
-                println!("MAP MISMATCH");
-                print_map_with_pos(&acc.0, &acc.1, dir);
-                print_map_with_pos(&map, &acc.1, dir);
-
-                return None;
-            }
-
-            let count_open_before = acc.0.values().filter(|c| **c == '[').count();
-            let count_closed_before = acc.0.values().filter(|c| **c == '[').count();
-            let count_open_after = map.values().filter(|c| **c == ']').count();
-            let count_closed_after = map.values().filter(|c| **c == ']').count();
-
-            if (count_open_before != count_open_after)
-                || (count_closed_before != count_closed_after)
-            {
-                println!("BOX COUNT MISMATCH");
-                print_map_with_pos(&acc.0, &acc.1, dir);
-                print_map_with_pos(&map, &acc.1, dir);
-
-                return None;
-            }
-
-            print_map_with_pos(&map, &pos, dir);
-
-            Some((map, pos))
+            tick2(acc.0.clone(), acc.1, dir)
         })
         .ok_or(GenericError)
         .context("Folding failed")?;
 
-    println!("pos: {:?}", pos);
     print_map_with_pos(&map, &pos, &Direction::Up);
-
-    println!("Moves: {}", directions.len());
 
     Ok(hash_map(&map))
 }
@@ -458,7 +395,9 @@ mod test {
             .iter()
             .try_fold((map, pos), |acc, dir| tick2(acc.0, acc.1, dir))
             .ok_or(GenericError)?;
-        print_map(&new_map).ok_or(GenericError).context("Could not print map")?;
+        print_map(&new_map)
+            .ok_or(GenericError)
+            .context("Could not print map")?;
 
         Ok(new_map)
     }
@@ -480,15 +419,20 @@ v";
         let expected = "####################
 ##[]..[]......[][]##
 ##[]...........[].##
-##............[][]##
-##...........@.[].##
+##...........@[][]##
+##.............[].##
 ##..##[]..[][]....##
 ##...[]...[].[]...##
 ##.....[]..[].[][]##
 ##........[]..[]..##
-####################";
+####################\n";
         let (map, dirs) = input_generator(input)?;
         let map = run(map, dirs)?;
+        let out = format_map(&map)
+            .ok_or(GenericError)
+            .context("Could not format map")?;
+
+        assert_eq!(expected, out);
 
         Ok(())
     }
