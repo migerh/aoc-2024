@@ -6,13 +6,26 @@ use pathfinding::prelude::{dijkstra, dijkstra_partial};
 
 use crate::utils::AocError::*;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Direction {
     North,
     East,
     South,
     West
 }
+
+impl Direction {
+    fn to_vec(&self) -> Coords {
+        match self {
+            North => (-1, 0),
+            East => (0, 1),
+            South => (1, 0),
+            West => (0, -1),
+        }
+    }
+}
+
+use Direction::*;
 
 type Base = i32;
 type Coords = (Base, Base);
@@ -145,31 +158,52 @@ fn distance(a: &Coords, b: &Coords) -> u32 {
     ((b.0 - a.0).abs() + (b.1 - a.1).abs()) as u32
 }
 
+fn succ2(map: &Map, pos: &Coords3) -> Vec<(Coords3, u32)> {
+    let dirs = [North, East, South, West];
+
+    dirs.into_iter()
+        .filter_map(|p| {
+            let delta = p.to_vec();
+            let c = (pos.0 + delta.0, pos.1 + delta.1);
+            let v = map.get(&c)?;
+
+            if *v != '#' {
+                let m = cost(&pos.2.to_vec(), &delta);
+                Some(((c.0, c.1, p), m))
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>()
+}
+
+fn to_coords(c: &Coords3) -> Coords {
+    (c.0, c.1)
+}
+
 fn find_all_paths(map: &Map, start: &Coords, dir: &Coords) -> Result<Vec<Vec<Coords>>> {
     let min = min_score(map)?;
     println!("min score {}", min);
     let end = map.iter().find(|p| p.1 == &'E').ok_or(GenericError).context("Could not find end")?.0;
 
-    let mut queue = vec![(((*start, *dir), 0_u32), vec![(*start, 0_u32)])];
+    let start = (start.0, start.1, East);
+    let mut queue = vec![((start, 0_u32), vec![(start, 0_u32)])];
     let mut all_paths = vec![];
 
     while let Some(n) = queue.pop() {
-        let (((point, dir), score), path) = n;
+        let ((point, score), path) = n;
         let current_score = path.last().ok_or(GenericError).context("Empty path")?.1;
-        if current_score + distance(&point, end) > min {
+        if current_score + distance(&to_coords(&point), end) > min {
             continue;
         }
 
-        let next = succ(map, &dir, &point);
-            //.into_iter()
-            //.map(|v| v.0)
-            //.collect::<Vec<_>>();
+        let next = succ2(map,  &point);
 
         let mut collect = next
             .into_iter()
             .map(|p| {
                 let mut foo = path.clone();
-                foo.push((p.0.0, p.1 + current_score));
+                foo.push((p.0, p.1 + current_score));
                 (p, foo)
             })
             .collect::<Vec<_>>();
@@ -185,15 +219,15 @@ fn find_all_paths(map: &Map, start: &Coords, dir: &Coords) -> Result<Vec<Vec<Coo
     Ok(all_paths
         .iter()
         .filter_map(|p| {
-            let f = p.first()?;
-            let l = p.last()?;
+            let f = to_coords(&p.first()?.0);
+            let l = to_coords(&p.last()?.0);
 
-            let fv = map.get(&f.0)?;
-            let lv = map.get(&l.0)?;
-            let s = l.1;
+            let fv = map.get(&f)?;
+            let lv = map.get(&l)?;
+            let s = p.last()?.1;
 
             if *fv == 'S' && *lv == 'E' && s == min {
-                let path = p.iter().map(|v| v.0).collect::<Vec<_>>();
+                let path = p.iter().map(|v| to_coords(&v.0)).collect::<Vec<_>>();
                 Some(path)
             } else {
                 None
