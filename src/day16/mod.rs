@@ -134,8 +134,3 @@ pub fn solve_part2(input: &Map) -> Result<usize> {
 
     Ok(all_points)
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-}
