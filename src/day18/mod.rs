@@ -3,7 +3,6 @@ use std::collections::HashSet;
 use anyhow::{Context, Result};
 use aoc_runner_derive::{aoc, aoc_generator};
 use pathfinding::prelude::dijkstra;
-use rayon::prelude::*;
 
 use crate::utils::AocError::*;
 
@@ -85,27 +84,24 @@ pub fn solve_part1(input: &[Coords]) -> Result<u32> {
 pub fn solve_part2(input: &[Coords]) -> Result<String> {
     let end = size(input).ok_or(GenericError).context("Map is empty")?;
     let start = (0, 0);
-    let start_index = if input.len() == 25 { 12 } else { 1024 };
 
-    (start_index..input.len())
-        .into_par_iter()
-        .filter(|m| {
-            let part1 = &input[..m + 1].iter().cloned().collect::<HashSet<_>>();
+    for m in 0..input.len() {
+        let part1 = &input[..input.len() - m - 1]
+            .iter()
+            .cloned()
+            .collect::<HashSet<_>>();
 
-            dijkstra(
-                &start,
-                |n| successors(part1, &end, n),
-                |n| n.0 == end.0 && n.1 == end.1,
-            )
-            .is_none()
-        })
-        .min()
-        .map(|c| {
-            let mem = input[c];
-            format!("{},{}", mem.0, mem.1)
-        })
-        .ok_or(GenericError)
-        .context("Path is never blocked")
+        if dijkstra(
+            &start,
+            |n| successors(part1, &end, n),
+            |n| n.0 == end.0 && n.1 == end.1,
+        ).is_some() {
+            let v = input[input.len() - m - 1];
+            return Ok(format!("{},{}", v.0, v.1));
+        }
+    }
+
+    Err(GenericError).context("Nix gfundn")
 }
 
 #[cfg(test)]
