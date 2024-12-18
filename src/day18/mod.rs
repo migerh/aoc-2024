@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use aoc_runner_derive::{aoc, aoc_generator};
 use pathfinding::prelude::dijkstra;
+use rayon::prelude::*;
 
 use crate::utils::AocError::*;
 
@@ -83,22 +84,22 @@ pub fn solve_part2(input: &[Coords]) -> Result<String> {
     let end = size(input).ok_or(GenericError).context("Map is empty")?;
     let start = (0, 0);
 
-    for i in 0..input.len() {
-        let part1 = input.iter().take(i + 1).cloned().collect::<Vec<_>>();
+    (0..input.len()).into_par_iter().filter_map(|m| {
+        let part1 = input.iter().take(m + 1).cloned().collect::<Vec<_>>();
 
-        let path = dijkstra(
+        if dijkstra(
             &start,
             |n| successors(&part1, &end, n),
             |n| n.0 == end.0 && n.1 == end.1,
-        );
-
-        if path.is_none() {
-            let mem = input[i];
-            return Ok(format!("{},{}", mem.0, mem.1));
+        ).is_none() {
+            Some(m)
+        } else {
+            None
         }
-    }
-
-    Err(GenericError).context("Path is never blocked")
+    }).min().map(|c| {
+        let mem = input[c];
+        format!("{},{}", mem.0, mem.1)
+    }).ok_or(GenericError).context("Path is never blocked")
 }
 
 #[cfg(test)]
