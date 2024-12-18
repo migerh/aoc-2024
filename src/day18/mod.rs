@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use anyhow::{Context, Result};
 use aoc_runner_derive::{aoc, aoc_generator};
 use pathfinding::prelude::dijkstra;
@@ -37,7 +39,7 @@ fn size(map: &[Coords]) -> Option<(i32, i32)> {
     Some((height, width))
 }
 
-fn successors(map: &[Coords], size: &Coords, c: &Coords) -> Vec<(Coords, u32)> {
+fn successors(map: &HashSet<Coords>, size: &Coords, c: &Coords) -> Vec<(Coords, u32)> {
     let dirs = [(-1, 0), (0, 1), (1, 0), (0, -1)];
 
     dirs.into_iter()
@@ -66,7 +68,7 @@ pub fn solve_part1(input: &[Coords]) -> Result<u32> {
         .iter()
         .take(if input.len() == 25 { 12 } else { 1024 })
         .cloned()
-        .collect::<Vec<_>>();
+        .collect::<HashSet<_>>();
 
     let path = dijkstra(
         &start,
@@ -83,23 +85,27 @@ pub fn solve_part1(input: &[Coords]) -> Result<u32> {
 pub fn solve_part2(input: &[Coords]) -> Result<String> {
     let end = size(input).ok_or(GenericError).context("Map is empty")?;
     let start = (0, 0);
+    let start_index = if input.len() == 25 { 12 } else { 1024 };
 
-    (0..input.len()).into_par_iter().filter_map(|m| {
-        let part1 = input.iter().take(m + 1).cloned().collect::<Vec<_>>();
+    (start_index..input.len())
+        .into_par_iter()
+        .filter(|m| {
+            let part1 = &input[..m + 1].iter().cloned().collect::<HashSet<_>>();
 
-        if dijkstra(
-            &start,
-            |n| successors(&part1, &end, n),
-            |n| n.0 == end.0 && n.1 == end.1,
-        ).is_none() {
-            Some(m)
-        } else {
-            None
-        }
-    }).min().map(|c| {
-        let mem = input[c];
-        format!("{},{}", mem.0, mem.1)
-    }).ok_or(GenericError).context("Path is never blocked")
+            dijkstra(
+                &start,
+                |n| successors(part1, &end, n),
+                |n| n.0 == end.0 && n.1 == end.1,
+            )
+            .is_none()
+        })
+        .min()
+        .map(|c| {
+            let mem = input[c];
+            format!("{},{}", mem.0, mem.1)
+        })
+        .ok_or(GenericError)
+        .context("Path is never blocked")
 }
 
 #[cfg(test)]
