@@ -52,58 +52,6 @@ fn find_node(map: &PlotMap, what: &char) -> Result<Coords> {
         .0)
 }
 
-fn identify_possible_cheats(map: &PlotMap, race_track: &[Coords]) -> Result<Vec<u32>> {
-    let dirs = [(-1, 0), (0, 1), (1, 0), (0, -1)];
-    let end = find_node(map, &'E')?;
-    let uncheated_result = race_track.len() as u32 - 1;
-
-    let cheats = race_track
-        .par_iter()
-        .enumerate()
-        .flat_map(|(current_len, p)| {
-            dirs.iter()
-                .filter_map(|dout| {
-                    let neighbor = (p.0 + dout.0, p.1 + dout.1);
-                    let nv = map.get(&neighbor)?;
-
-                    if *nv != '#' {
-                        None
-                    } else {
-                        Some(
-                            dirs.iter()
-                                .filter_map(|din| {
-                                    let new_start = (neighbor.0 + din.0, neighbor.1 + din.1);
-                                    let sn = map.get(&new_start)?;
-
-                                    if (*sn == '#') || (new_start.0 == p.0 && new_start.1 == p.1) {
-                                        None
-                                    } else {
-                                        let path = dijkstra(
-                                            &new_start,
-                                            |n| successors(map, n),
-                                            |n| end.0 == n.0 && end.1 == n.1,
-                                        )?;
-
-                                        let new_race_length = current_len as u32 + path.1 + 2;
-                                        if uncheated_result > new_race_length {
-                                            Some(uncheated_result - new_race_length)
-                                        } else {
-                                            None
-                                        }
-                                    }
-                                })
-                                .collect::<Vec<_>>(),
-                        )
-                    }
-                })
-                .flatten()
-                .collect::<Vec<_>>()
-        })
-        .collect::<Vec<_>>();
-
-    Ok(cheats)
-}
-
 #[aoc(day20, part1)]
 pub fn solve_part1(input: &PlotMap) -> Result<usize> {
     let start = find_node(input, &'S')?;
@@ -116,9 +64,7 @@ pub fn solve_part1(input: &PlotMap) -> Result<usize> {
     .ok_or(GenericError)
     .context("No path found")?;
 
-    let result = identify_possible_cheats(input, &path.0)?
-        // Using part 2 identifier algorithm works, too, but takes 3 times as long
-        // let result = identify_cheats_part2(input, &path.0, 2)?
+    let result = identify_cheats(input, &path.0, 2)?
         .into_iter()
         .filter(|t| *t >= 100)
         .count();
@@ -130,37 +76,20 @@ fn distance(start: &Coords, end: &Coords) -> u32 {
     ((end.0 - start.0).abs() + (end.1 - start.1).abs()) as u32
 }
 
-fn get_shortest_path_length_cached(
-    cache: &mut HashMap<Coords, u32>,
-    map: &PlotMap,
-    start: &Coords,
-    end: &Coords,
-) -> Option<u32> {
-    if cache.contains_key(start) {
-        return cache.get(start).copied();
-    }
-
-    let path = dijkstra(
-        start,
-        |n| successors(map, n),
-        |n| end.0 == n.0 && end.1 == n.1,
-    )?;
-    cache.entry(*start).or_insert(path.1);
-
-    Some(path.1)
-}
-
-fn identify_cheats_part2(
+fn identify_cheats(
     map: &PlotMap,
     race_track: &[Coords],
     max_cheat_time: u32,
 ) -> Result<Vec<u32>> {
-    let end = find_node(map, &'E')?;
     let uncheated_result = race_track.len() as u32 - 1;
-    let mut cache = HashMap::new();
+    let remaining_paths = race_track
+        .iter()
+        .enumerate()
+        .map(|(i, &p)| (p, uncheated_result - i as u32))
+        .collect::<HashMap<_, _>>();
 
     let cheats = race_track
-        .iter()
+        .par_iter()
         .enumerate()
         .flat_map(|(current_len, p)| {
             let new_starts = map
@@ -178,8 +107,7 @@ fn identify_cheats_part2(
             new_starts
                 .iter()
                 .filter_map(|new_start| {
-                    let cheated_path_rest =
-                        get_shortest_path_length_cached(&mut cache, map, new_start.0, &end)?;
+                    let cheated_path_rest = remaining_paths.get(new_start.0)?;
 
                     let new_race_length = current_len as u32 + cheated_path_rest + new_start.1;
                     if uncheated_result > new_race_length {
@@ -207,7 +135,7 @@ pub fn solve_part2(input: &PlotMap) -> Result<usize> {
     .ok_or(GenericError)
     .context("No path found")?;
 
-    let result = identify_cheats_part2(input, &path.0, 20)?
+    let result = identify_cheats(input, &path.0, 20)?
         .into_iter()
         .filter(|t| *t >= 100)
         .count();
