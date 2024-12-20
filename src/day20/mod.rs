@@ -14,22 +14,6 @@ type PlotMap = Map<char>;
 
 #[aoc_generator(day20)]
 pub fn input_generator(input: &str) -> Result<PlotMap> {
-    //    let input = "###############
-    //#...#...#.....#
-    //#.#.#.#.#.###.#
-    //#S#...#.#.#...#
-    //#######.#.#.###
-    //#######.#.#...#
-    //#######.#.###.#
-    //###..E#...#...#
-    //###.#######.###
-    //#...###...#...#
-    //#.#####.#.###.#
-    //#.#...#.#.#...#
-    //#.#.#.#.#.#.###
-    //#...#...#...###
-    //###############";
-
     let map = input
         .lines()
         .enumerate()
@@ -133,8 +117,8 @@ pub fn solve_part1(input: &PlotMap) -> Result<usize> {
     .context("No path found")?;
 
     let result = identify_possible_cheats(input, &path.0)?
-    // Using part 2 identifier algorithm works, too, but takes 3 times as long
-    // let result = identify_cheats_part2(input, &path.0, 2)?
+        // Using part 2 identifier algorithm works, too, but takes 3 times as long
+        // let result = identify_cheats_part2(input, &path.0, 2)?
         .into_iter()
         .filter(|t| *t >= 100)
         .count();
@@ -234,4 +218,38 @@ pub fn solve_part2(input: &PlotMap) -> Result<usize> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    fn input() -> &'static str {
+        "###############
+    #...#...#.....#
+    #.#.#.#.#.###.#
+    #S#...#.#.#...#
+    #######.#.#.###
+    #######.#.#...#
+    #######.#.###.#
+    ###..E#...#...#
+    ###.#######.###
+    #...###...#...#
+    #.#####.#.###.#
+    #.#...#.#.#...#
+    #.#.#.#.#.#.###
+    #...#...#...###
+    ###############"
+    }
+
+    fn real_input() -> &'static str {
+        include_str!("../../input/2024/day20.txt")
+    }
+
+    #[test]
+    fn part2() -> Result<()> {
+        let data = input_generator(input())?;
+        Ok(assert_eq!(0, solve_part2(&data)?))
+    }
+
+    #[test]
+    fn part2_real() -> Result<()> {
+        let data = input_generator(real_input())?;
+        Ok(assert_eq!(1005476, solve_part2(&data)?))
+    }
 }
