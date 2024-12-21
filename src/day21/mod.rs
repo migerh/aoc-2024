@@ -372,6 +372,7 @@ fn hash(code: &[char], punch: String) -> Result<usize> {
     Ok(punch.len() * code)
 }
 
+#[memoize]
 fn control_robot_single_recursive(from: char, to: char, level: u32, max_level: u32) -> Option<usize> {
     let to_type = if level == 0 { type_number2(from, to) } else { type_code2(from, to ) };
 
@@ -397,19 +398,6 @@ fn hash2(code: &[char], punch: usize) -> Result<usize> {
 
 #[aoc(day21, part1)]
 pub fn solve_part1(input: &[Vec<char>]) -> Result<usize> {
-    // too high
-    // 168492
-    // 163872
-    //
-    // too low
-    // 160060
-
-    //Ok(input
-    //    .iter()
-    //    .filter_map(|c| hash2(c, control_robot_recursive(c.iter().collect::<String>(), 0, 3)?).ok())
-    //    .inspect(|c| println!("{}\n", c))
-    //    .sum())
-
     let result = input.iter().filter_map(|s| {
         let len = vec!['A'].iter().chain(s).collect::<Vec<_>>().windows(2).filter_map(|w| {
             control_robot_single_recursive(*w[0], *w[1], 0, 2)
@@ -423,8 +411,17 @@ pub fn solve_part1(input: &[Vec<char>]) -> Result<usize> {
 }
 
 #[aoc(day21, part2)]
-pub fn solve_part2(input: &[Vec<char>]) -> Result<i32> {
-    Ok(0)
+pub fn solve_part2(input: &[Vec<char>]) -> Result<usize> {
+    let result = input.iter().filter_map(|s| {
+        let len = vec!['A'].iter().chain(s).collect::<Vec<_>>().windows(2).filter_map(|w| {
+            control_robot_single_recursive(*w[0], *w[1], 0, 25)
+        })
+        .sum();
+
+        hash2(s, len).ok()
+    })
+    .sum();
+    Ok(result)
 }
 
 #[cfg(test)]
