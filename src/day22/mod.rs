@@ -1,7 +1,10 @@
 use anyhow::{Context, Result};
 use aoc_runner_derive::{aoc, aoc_generator};
 use rayon::prelude::*;
-use std::{collections::HashMap, ops::BitXor};
+use std::{
+    collections::HashMap,
+    ops::{BitAnd, BitXor, Shl},
+};
 
 use crate::utils::AocError::*;
 
@@ -14,9 +17,9 @@ pub fn input_generator(input: &str) -> Result<Vec<u128>> {
 }
 
 fn next(mut number: u128) -> u128 {
-    number = number.bitxor(number * 64) % 16777216;
-    number = number.bitxor(number / 32) % 16777216;
-    number = number.bitxor(number * 2048) % 16777216;
+    number = number.bitxor(number.shl(6) as u128).bitand(0xFFFFFF);
+    number = number.bitxor(number >> 5 as u128).bitand(0xFFFFFF);
+    number = number.bitxor(number.shl(11) as u128).bitand(0xFFFFFF);
     number
 }
 
