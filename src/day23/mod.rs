@@ -12,39 +12,6 @@ type Pair = (String, String);
 
 #[aoc_generator(day23)]
 pub fn input_generator(input: &str) -> Result<Vec<Pair>> {
-    //    let input = "kh-tc
-    //qp-kh
-    //de-cg
-    //ka-co
-    //yn-aq
-    //qp-ub
-    //cg-tb
-    //vc-aq
-    //tb-ka
-    //wh-tc
-    //yn-cg
-    //kh-ub
-    //ta-co
-    //de-co
-    //tc-td
-    //tb-wq
-    //wh-td
-    //ta-ka
-    //td-qp
-    //aq-cg
-    //wq-ub
-    //ub-vc
-    //de-ta
-    //wq-aq
-    //wq-vc
-    //wh-yn
-    //ka-de
-    //kh-ta
-    //co-tc
-    //wh-qp
-    //tb-vc
-    //td-yn";
-
     Ok(input
         .lines()
         .filter_map(|l| {
@@ -54,10 +21,9 @@ pub fn input_generator(input: &str) -> Result<Vec<Pair>> {
         .collect::<Vec<_>>())
 }
 
-#[aoc(day23, part1)]
-pub fn solve_part1(input: &[Pair]) -> Result<usize> {
+fn build_graph(edges: &[Pair]) -> HashMap<String, Vec<String>> {
     let mut connections = HashMap::new();
-    for c in input {
+    for c in edges {
         connections
             .entry(c.0.clone())
             .and_modify(|v: &mut Vec<String>| v.push(c.1.clone()))
@@ -68,15 +34,20 @@ pub fn solve_part1(input: &[Pair]) -> Result<usize> {
             .and_modify(|v: &mut Vec<String>| v.push(c.0.clone()))
             .or_insert(vec![c.0.clone()]);
     }
+    connections
+}
+#[aoc(day23, part1)]
+pub fn solve_part1(input: &[Pair]) -> Result<usize> {
+    let connections = build_graph(input);
 
-    let mut thriples = vec![];
+    let mut triples = vec![];
     for c in connections.iter() {
         for neighbor in c.1.iter() {
             if let Some(second_list) = connections.get(neighbor) {
                 for second in second_list.iter() {
                     if let Some(third_list) = connections.get(second) {
                         if second != c.0 && third_list.contains(c.0) {
-                            thriples.push([c.0.clone(), neighbor.clone(), second.clone()]);
+                            triples.push([c.0.clone(), neighbor.clone(), second.clone()]);
                         }
                     }
                 }
@@ -84,12 +55,12 @@ pub fn solve_part1(input: &[Pair]) -> Result<usize> {
         }
     }
 
-    let thriples_with_t = thriples
+    let triples_with_t = triples
         .iter()
         .filter(|t| t.iter().any(|l| l.starts_with("t")))
         .collect::<Vec<_>>();
 
-    let condensed = thriples_with_t
+    let condensed = triples_with_t
         .iter()
         .filter(|t| t[0] != t[1] && t[1] != t[2] && t[0] != t[2])
         .map(|t| {
@@ -131,19 +102,7 @@ fn bron_kerbosch(
 
 #[aoc(day23, part2)]
 pub fn solve_part2(input: &[Pair]) -> Result<String> {
-    let mut connections = HashMap::new();
-    for c in input {
-        connections
-            .entry(c.0.clone())
-            .and_modify(|v: &mut Vec<String>| v.push(c.1.clone()))
-            .or_insert(vec![c.1.clone()]);
-
-        connections
-            .entry(c.1.clone())
-            .and_modify(|v: &mut Vec<String>| v.push(c.0.clone()))
-            .or_insert(vec![c.0.clone()]);
-    }
-
+    let connections = build_graph(input);
     let r = HashSet::new();
     let x = HashSet::new();
     let p = connections.keys().cloned().collect::<HashSet<_>>();
@@ -174,9 +133,4 @@ pub fn solve_part2(input: &[Pair]) -> Result<String> {
     }
 
     Err(GenericError).context("No solution found")
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
 }
