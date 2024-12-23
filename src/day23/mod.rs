@@ -1,12 +1,7 @@
-use std::{
-    collections::{HashMap, HashSet},
-    sync::Mutex,
-};
+use std::collections::{HashMap, HashSet};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use aoc_runner_derive::{aoc, aoc_generator};
-
-use crate::utils::AocError::*;
 
 type Pair = (String, String);
 
@@ -36,6 +31,7 @@ fn build_graph(edges: &[Pair]) -> HashMap<String, Vec<String>> {
     }
     connections
 }
+
 #[aoc(day23, part1)]
 pub fn solve_part1(input: &[Pair]) -> Result<usize> {
     let connections = build_graph(input);
@@ -75,26 +71,50 @@ pub fn solve_part1(input: &[Pair]) -> Result<usize> {
     Ok(condensed.len())
 }
 
-fn bron_kerbosch(
-    r: HashSet<String>,
-    p: HashSet<String>,
-    x: HashSet<String>,
-    neighbors: &impl Fn(String) -> HashSet<String>,
-    report: &impl Fn(HashSet<String>) -> (),
+fn build_graph_str(edges: &[Pair]) -> HashMap<&str, HashSet<&str>> {
+    let mut connections = HashMap::new();
+    for c in edges {
+        connections
+            .entry(c.0.as_str())
+            .and_modify(|v: &mut HashSet<&str>| {
+                v.insert(&c.1);
+            })
+            .or_insert(HashSet::from([c.1.as_str()]));
+
+        connections
+            .entry(c.1.as_str())
+            .and_modify(|v: &mut HashSet<&str>| {
+                v.insert(&c.0);
+            })
+            .or_insert(HashSet::from([c.0.as_str()]));
+    }
+    connections
+}
+
+fn bron_kerbosch<'a>(
+    r: HashSet<&'a str>,
+    p: HashSet<&'a str>,
+    x: HashSet<&'a str>,
+    graph: &HashMap<&'a str, HashSet<&'a str>>,
+    report: &mut Vec<HashSet<&'a str>>,
 ) {
     if p.is_empty() && x.is_empty() {
-        report(r.clone());
+        report.push(r.clone());
     }
 
     let mut p = p.clone();
     let mut x = x.clone();
     for v in p.clone() {
-        let ns = neighbors(v.clone());
+        let ns = if let Some(n) = graph.get(&v) {
+            n
+        } else {
+            &HashSet::new()
+        };
         let mut nr = r.clone();
-        nr.insert(v.clone());
+        nr.insert(v);
         let np = p.intersection(&ns).cloned().collect::<HashSet<_>>();
         let nx = x.intersection(&ns).cloned().collect::<HashSet<_>>();
-        bron_kerbosch(nr, np, nx, neighbors, report);
+        bron_kerbosch(nr, np, nx, graph, report);
         p.remove(&v);
         x.insert(v);
     }
@@ -102,35 +122,19 @@ fn bron_kerbosch(
 
 #[aoc(day23, part2)]
 pub fn solve_part2(input: &[Pair]) -> Result<String> {
-    let connections = build_graph(input);
+    let connections = build_graph_str(input);
     let r = HashSet::new();
     let x = HashSet::new();
     let p = connections.keys().cloned().collect::<HashSet<_>>();
 
-    let cliques = Mutex::new(vec![]);
-    bron_kerbosch(
-        r,
-        p,
-        x,
-        &|v: String| {
-            if let Some(n) = connections.get(&v) {
-                n.iter().cloned().collect::<HashSet<_>>()
-            } else {
-                HashSet::new()
-            }
-        },
-        &|c: HashSet<String>| cliques.lock().unwrap().push(c),
-    );
+    let mut cliques = vec![];
+    bron_kerbosch(r, p, x, &connections, &mut cliques);
 
-    if let Ok(c) = cliques.lock() {
-        let mut c = c.clone();
-        c.sort_by_key(|v| v.len());
-        let mut vertices = c.last().unwrap().iter().cloned().collect::<Vec<_>>();
-        vertices.sort();
-        let solution = vertices.join(",");
+    let mut c = cliques.clone();
+    c.sort_by_key(|v| v.len());
+    let mut vertices = c.last().unwrap().iter().cloned().collect::<Vec<_>>();
+    vertices.sort();
+    let solution = vertices.join(",");
 
-        return Ok(solution.clone());
-    }
-
-    Err(GenericError).context("No solution found")
+    Ok(solution.clone())
 }
