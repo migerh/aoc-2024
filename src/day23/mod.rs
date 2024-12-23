@@ -1,44 +1,49 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Mutex,
+};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use aoc_runner_derive::{aoc, aoc_generator};
+
+use crate::utils::AocError::*;
 
 type Pair = (String, String);
 
 #[aoc_generator(day23)]
 pub fn input_generator(input: &str) -> Result<Vec<Pair>> {
-    // let input = "kh-tc
-    // qp-kh
-    // de-cg
-    // ka-co
-    // yn-aq
-    // qp-ub
-    // cg-tb
-    // vc-aq
-    // tb-ka
-    // wh-tc
-    // yn-cg
-    // kh-ub
-    // ta-co
-    // de-co
-    // tc-td
-    // tb-wq
-    // wh-td
-    // ta-ka
-    // td-qp
-    // aq-cg
-    // wq-ub
-    // ub-vc
-    // de-ta
-    // wq-aq
-    // wq-vc
-    // wh-yn
-    // ka-de
-    // kh-ta
-    // co-tc
-    // wh-qp
-    // tb-vc
-    // td-yn";
+    //    let input = "kh-tc
+    //qp-kh
+    //de-cg
+    //ka-co
+    //yn-aq
+    //qp-ub
+    //cg-tb
+    //vc-aq
+    //tb-ka
+    //wh-tc
+    //yn-cg
+    //kh-ub
+    //ta-co
+    //de-co
+    //tc-td
+    //tb-wq
+    //wh-td
+    //ta-ka
+    //td-qp
+    //aq-cg
+    //wq-ub
+    //ub-vc
+    //de-ta
+    //wq-aq
+    //wq-vc
+    //wh-yn
+    //ka-de
+    //kh-ta
+    //co-tc
+    //wh-qp
+    //tb-vc
+    //td-yn";
 
     Ok(input
         .lines()
@@ -64,55 +69,19 @@ pub fn solve_part1(input: &[Pair]) -> Result<usize> {
             .or_insert(vec![c.0.clone()]);
     }
 
-    //let mut keys = connections.keys().collect::<Vec<_>>();
-    //keys.sort();
-    //for k in keys.into_iter() {
-    //    println!("{}", k);
-    //    let v = connections.get(k).clone().unwrap();
-    //    println!("{}", format!("{:?}", v).replace("\"", "'"));
-    //}
-
     let mut thriples = vec![];
     for c in connections.iter() {
         for neighbor in c.1.iter() {
-            for second in connections.get(neighbor).unwrap().iter() {
-                if second != c.0 && connections.get(second).unwrap().contains(c.0) {
-                    thriples.push([c.0.clone(), neighbor.clone(), second.clone()]);
+            if let Some(second_list) = connections.get(neighbor) {
+                for second in second_list.iter() {
+                    if let Some(third_list) = connections.get(second) {
+                        if second != c.0 && third_list.contains(c.0) {
+                            thriples.push([c.0.clone(), neighbor.clone(), second.clone()]);
+                        }
+                    }
                 }
             }
         }
-        //let is_triple = if let Some(w) = connections.get(&val[0]) {
-        //    w.contains(&val[1]) && w.contains(c.0)
-        //} else {
-        //    false
-        //};
-
-        //if is_triple {
-        //    acc.into_iter()
-        //        .chain([vec![c.0.clone(), val[0].clone(), val[1].clone()]])
-        //        .collect::<Vec<_>>()
-        //} else {
-        //    acc
-        //}
-        //});
-        //thriples.append(&mut concat);
-    }
-
-    let mut condensed = thriples
-        .iter()
-        .filter(|t| t[0] != t[1] && t[1] != t[2] && t[0] != t[2])
-        .map(|t| {
-            let mut t = (*t).clone();
-            t.sort();
-            t.join(",")
-        })
-        .collect::<HashSet<_>>()
-        .into_iter()
-        .collect::<Vec<_>>();
-    condensed.sort();
-    println!("total thriples: {}", condensed.len());
-    for c in condensed {
-        println!("{}", c);
     }
 
     let thriples_with_t = thriples
@@ -120,9 +89,7 @@ pub fn solve_part1(input: &[Pair]) -> Result<usize> {
         .filter(|t| t.iter().any(|l| l.starts_with("t")))
         .collect::<Vec<_>>();
 
-    println!("{} thriples with t", thriples_with_t.len());
-
-    let mut condensed = thriples_with_t
+    let condensed = thriples_with_t
         .iter()
         .filter(|t| t[0] != t[1] && t[1] != t[2] && t[0] != t[2])
         .map(|t| {
@@ -134,23 +101,79 @@ pub fn solve_part1(input: &[Pair]) -> Result<usize> {
         .into_iter()
         .collect::<Vec<_>>();
 
-    condensed.sort();
-
-    println!("{} condensed list of thriples with t", condensed.len());
-    //for t in condensed.iter() {
-    //    println!("{}", t);
-    //}
-
-    // stuck
-    // 958
-    // 487
-
     Ok(condensed.len())
 }
 
+fn bron_kerbosch(
+    r: HashSet<String>,
+    p: HashSet<String>,
+    x: HashSet<String>,
+    neighbors: &impl Fn(String) -> HashSet<String>,
+    report: &impl Fn(HashSet<String>) -> (),
+) {
+    if p.is_empty() && x.is_empty() {
+        report(r.clone());
+    }
+
+    let mut p = p.clone();
+    let mut x = x.clone();
+    for v in p.clone() {
+        let ns = neighbors(v.clone());
+        let mut nr = r.clone();
+        nr.insert(v.clone());
+        let np = p.intersection(&ns).cloned().collect::<HashSet<_>>();
+        let nx = x.intersection(&ns).cloned().collect::<HashSet<_>>();
+        bron_kerbosch(nr, np, nx, neighbors, report);
+        p.remove(&v);
+        x.insert(v);
+    }
+}
+
 #[aoc(day23, part2)]
-pub fn solve_part2(input: &[Pair]) -> Result<i32> {
-    Ok(0)
+pub fn solve_part2(input: &[Pair]) -> Result<String> {
+    let mut connections = HashMap::new();
+    for c in input {
+        connections
+            .entry(c.0.clone())
+            .and_modify(|v: &mut Vec<String>| v.push(c.1.clone()))
+            .or_insert(vec![c.1.clone()]);
+
+        connections
+            .entry(c.1.clone())
+            .and_modify(|v: &mut Vec<String>| v.push(c.0.clone()))
+            .or_insert(vec![c.0.clone()]);
+    }
+
+    let r = HashSet::new();
+    let x = HashSet::new();
+    let p = connections.keys().cloned().collect::<HashSet<_>>();
+
+    let cliques = Mutex::new(vec![]);
+    bron_kerbosch(
+        r,
+        p,
+        x,
+        &|v: String| {
+            if let Some(n) = connections.get(&v) {
+                n.iter().cloned().collect::<HashSet<_>>()
+            } else {
+                HashSet::new()
+            }
+        },
+        &|c: HashSet<String>| cliques.lock().unwrap().push(c),
+    );
+
+    if let Ok(c) = cliques.lock() {
+        let mut c = c.clone();
+        c.sort_by_key(|v| v.len());
+        let mut vertices = c.last().unwrap().iter().cloned().collect::<Vec<_>>();
+        vertices.sort();
+        let solution = vertices.join(",");
+
+        return Ok(solution.clone());
+    }
+
+    Err(GenericError).context("No solution found")
 }
 
 #[cfg(test)]
