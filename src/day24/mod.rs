@@ -7,7 +7,6 @@ use std::{
 
 use anyhow::{Context, Result};
 use aoc_runner_derive::{aoc, aoc_generator};
-use permutator::k_permutation;
 
 use crate::utils::AocError::*;
 
@@ -33,26 +32,6 @@ pub fn input_generator(input: &str) -> Result<(HashMap<String, u8>, Vec<Expressi
         static ref RE: regex::Regex =
             regex::Regex::new(r"(.*?) (AND|OR|XOR) (.*?) -> (.*)").unwrap();
     }
-
-    let _input2 = "x00: 0
-x01: 1
-x02: 0
-x03: 1
-x04: 0
-x05: 1
-y00: 0
-y01: 0
-y02: 1
-y03: 1
-y04: 0
-y05: 1
-
-x00 AND y00 -> z05
-x01 AND y01 -> z02
-x02 AND y02 -> z01
-x03 AND y03 -> z03
-x04 AND y04 -> z04
-x05 AND y05 -> z00";
 
     let mut parts = input.split("\n\n");
 
@@ -209,24 +188,16 @@ fn build_subgraph(expressions: &Vec<Expression>, what: u32) -> Vec<Expression> {
     vertices.insert(format!("x{:02}", what));
     vertices.insert(format!("y{:02}", what));
     vertices.insert(format!("z{:02}", what));
-    let mut size = 0;
 
-    loop {
-        for e in expressions {
-            let mut temp = HashSet::new();
-            temp.insert(e.left.clone());
-            temp.insert(e.right.clone());
-            temp.insert(e.result.clone());
+    for e in expressions {
+        let mut temp = HashSet::new();
+        temp.insert(e.left.clone());
+        temp.insert(e.right.clone());
+        temp.insert(e.result.clone());
 
-            if vertices.intersection(&temp).count() != 0 {
-                vertices = vertices.union(&temp).cloned().collect::<HashSet<_>>();
-            }
+        if vertices.intersection(&temp).count() != 0 {
+            vertices = vertices.union(&temp).cloned().collect::<HashSet<_>>();
         }
-        break;
-        //if size == vertices.len() {
-        //    break;
-        //}
-        //size = vertices.len();
     }
 
     expressions
@@ -244,27 +215,19 @@ fn build_subgraph(expressions: &Vec<Expression>, what: u32) -> Vec<Expression> {
 pub fn solve_part2(input: &(HashMap<String, u8>, Vec<Expression>)) -> Result<String> {
     let (values, expressions) = input.clone();
 
-    // 29449276014285 + 22588316256281 = 52038112429798
-    // 110101100100010110001101000101011111011001101
-    // 101001000101101000000100100010000100000011001
-    // expected: 1011110101001111110010001100111100011011100110
-    //   actual: 1011110101010000010001001101001100011011100110
-    //     diff: 0b00000000011111100011000001110000000000000000
-    // {"z16", "z31", "z33", "z25", "z34", "z17", "z18", "z24", "z29", "z30", "z32"}
-
     let x = get_value(&values, "x")?;
     let y = get_value(&values, "y")?;
     let z = solve_part1(input)?;
 
-    println!("{} + {} = {}", x, y, z);
-    println!("{:b}", x);
-    println!("{:b}", y);
-    println!("expected: {:b}", x + y);
-    println!("  actual: {:b}", z);
+    // println!("{} + {} = {}", x, y, z);
+    // println!("{:b}", x);
+    // println!("{:b}", y);
+    // println!("expected: {:b}", x + y);
+    // println!("  actual: {:b}", z);
 
     let mut diff_bits = (x + y).bitxor(z);
 
-    println!("    diff: {:#046b}", diff_bits);
+    // println!("    diff: {:#046b}", diff_bits);
 
     let mut involved_values = vec![];
     let mut c = 0;
@@ -284,7 +247,6 @@ pub fn solve_part2(input: &(HashMap<String, u8>, Vec<Expression>)) -> Result<Str
         .map(|v| format!("z{:02}", v))
         .collect::<HashSet<_>>();
     let differing_z_bits = involved_values.clone();
-    println!("{:?}", involved_values);
 
     loop {
         let next_expressions = expressions
@@ -311,17 +273,6 @@ pub fn solve_part2(input: &(HashMap<String, u8>, Vec<Expression>)) -> Result<Str
         }
         size = involved_expressions.len();
     }
-    println!(
-        "Number of involved expressions: {}",
-        involved_expressions.len()
-    );
-
-    let mut c = 0;
-    // let involved_expressions = involved_expressions.into_iter().collect::<Vec<_>>();
-    //k_permutation(&involved_expressions, 8, |p| {
-    //    c += 1;
-    //});
-    println!("{}", c);
 
     print_graph(
         &expressions,
@@ -330,7 +281,6 @@ pub fn solve_part2(input: &(HashMap<String, u8>, Vec<Expression>)) -> Result<Str
         "../../../all.dot",
     );
 
-    println!("subgraph for each bit");
     let sub = build_subgraph(&expressions, 43);
     print_graph(&sub, &HashSet::new(), &HashSet::new(), "../../../z43.dot");
 
