@@ -6,7 +6,7 @@ use aoc_runner_derive::{aoc, aoc_generator};
 use crate::utils::AocError::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-enum LockKey {
+pub enum LockKey {
     Lock([usize; 5]),
     Key([usize; 5]),
 }
@@ -45,46 +45,6 @@ impl FromStr for LockKey {
 
 #[aoc_generator(day25)]
 pub fn input_generator(input: &str) -> Result<Vec<LockKey>> {
-    let _input = "#####
-.####
-.####
-.####
-.#.#.
-.#...
-.....
-
-#####
-##.##
-.#.##
-...##
-...#.
-...#.
-.....
-
-.....
-#....
-#....
-#...#
-#.#.#
-#.###
-#####
-
-.....
-.....
-#.#..
-###..
-###.#
-###.#
-#####
-
-.....
-.....
-.....
-#....
-#.#..
-#.#.#
-#####";
-
     input
         .split("\n\n")
         .map(LockKey::from_str)
@@ -93,7 +53,6 @@ pub fn input_generator(input: &str) -> Result<Vec<LockKey>> {
 
 #[aoc(day25, part1)]
 pub fn solve_part1(input: &[LockKey]) -> Result<usize> {
-    println!("{:?}", input);
     let locks = input
         .iter()
         .filter_map(|lk| {
@@ -133,11 +92,59 @@ pub fn solve_part1(input: &[LockKey]) -> Result<usize> {
 }
 
 #[aoc(day25, part2)]
-pub fn solve_part2(input: &[LockKey]) -> Result<i32> {
+pub fn solve_part2(_input: &[LockKey]) -> Result<i32> {
     Ok(0)
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+
+    fn input() -> &'static str {
+        "#####
+.####
+.####
+.####
+.#.#.
+.#...
+.....
+
+#####
+##.##
+.#.##
+...##
+...#.
+...#.
+.....
+
+.....
+#....
+#....
+#...#
+#.#.#
+#.###
+#####
+
+.....
+.....
+#.#..
+###..
+###.#
+###.#
+#####
+
+.....
+.....
+.....
+#....
+#.#..
+#.#.#
+#####"
+    }
+
+    #[test]
+    fn part1() -> Result<()> {
+        let data = input_generator(input())?;
+        Ok(assert_eq!(3, solve_part1(&data)?))
+    }
 }
