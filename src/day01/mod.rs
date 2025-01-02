@@ -1,11 +1,9 @@
-use crate::utils::AocError::*;
+use crate::utils::{input::read_by_line, AocError::*};
 use anyhow::{Context, Result};
 use aoc_runner_derive::{aoc, aoc_generator};
 
 fn parse_line(s: &str) -> Result<(i32, i32)> {
-    let mut cs = s
-        .split(" ")
-        .filter(|s| !s.is_empty());
+    let mut cs = s.split(" ").filter(|s| !s.is_empty());
 
     match (cs.next(), cs.next()) {
         (Some(i), Some(j)) => Ok((i.parse::<i32>()?, j.parse::<i32>()?)),
@@ -15,12 +13,7 @@ fn parse_line(s: &str) -> Result<(i32, i32)> {
 
 #[aoc_generator(day01)]
 pub fn input_generator(input: &str) -> Result<Vec<(i32, i32)>> {
-    input
-        .lines()
-        .filter(|s| !s.is_empty())
-        .map(parse_line)
-        .collect::<Result<Vec<(i32, i32)>>>()
-        .context("Error while parsing input")
+    read_by_line(input, parse_line)
 }
 
 #[aoc(day01, part1)]

@@ -1,4 +1,4 @@
-use crate::utils::AocError::*;
+use crate::utils::{input::read_by_line, AocError::*};
 use anyhow::Result;
 use aoc_runner_derive::{aoc, aoc_generator};
 
@@ -16,7 +16,7 @@ fn parse_line(line: &str) -> Result<Vec<i32>> {
 
 #[aoc_generator(day02)]
 pub fn input_generator(input: &str) -> Result<Vec<Vec<i32>>> {
-    input.lines().map(parse_line).collect::<Result<Vec<_>>>()
+    read_by_line(input, parse_line)
 }
 
 fn determine_report_safety(report: &[i32]) -> Result<Safety> {
@@ -41,9 +41,7 @@ fn determine_report_safety(report: &[i32]) -> Result<Safety> {
 pub fn solve_part1(input: &[Vec<i32>]) -> Result<usize> {
     Ok(input
         .iter()
-        .map(|r| determine_report_safety(r))
-        .collect::<Result<Vec<_>>>()?
-        .into_iter()
+        .filter_map(|r| determine_report_safety(r).ok())
         .filter(|s| *s == Safety::Safe)
         .count())
 }
@@ -66,9 +64,7 @@ fn determine_report_safety_with_dampener(report: &[i32]) -> Result<Safety> {
 pub fn solve_part2(input: &[Vec<i32>]) -> Result<usize> {
     Ok(input
         .iter()
-        .map(|r| determine_report_safety_with_dampener(r))
-        .collect::<Result<Vec<_>>>()?
-        .into_iter()
+        .filter_map(|r| determine_report_safety_with_dampener(r).ok())
         .filter(|s| *s == Safety::Safe)
         .count())
 }
